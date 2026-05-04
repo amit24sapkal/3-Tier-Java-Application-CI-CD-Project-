@@ -1,0 +1,47 @@
+# Docker Compose for Local Testing (Optional)
+# Run: docker-compose up
+
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: ekart-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: ekart_db
+      MYSQL_USER: ekart_user
+      MYSQL_PASSWORD: ekart_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Java Application
+  application:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: ekart-app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ekart_db
+      SPRING_DATASOURCE_USERNAME: ekart_user
+      SPRING_DATASOURCE_PASSWORD: ekart_pass
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:

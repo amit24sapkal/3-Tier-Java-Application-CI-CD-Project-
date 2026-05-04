@@ -1,0 +1,176 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Application Variables
+        APP_NAME = "ekart"
+        VERSION = "${BUILD_ID}"
+        DOCKER_REGISTRY = "docker.io"
+        DOCKER_IMAGE = "${DOCKER_REGISTRY}/<YOUR_DOCKER_USERNAME>/${APP_NAME}"
+        NEXUS_URL = "http://<NEXUS_IP>:8081"
+        SONAR_HOST = "http://<SONARQUBE_IP>:9000"
+        
+        // Credentials
+        DOCKER_CREDENTIALS = credentials('docker-credentials')
+        SONAR_TOKEN = credentials('sonar-token')
+        NEXUS_CREDENTIALS = credentials('nexus-credentials')
+        AWS_CREDENTIALS = credentials('aws-credentials')
+    }
+    
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 1, unit: 'HOURS')
+        timestamps()
+    }
+    
+    stages {
+        stage('Clone Code') {
+            steps {
+                script {
+                    echo "======= Cloning Repository ======="
+                    checkout scm
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                script {
+                    echo "======= Building Application ======="
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
+        
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    echo "======= Running SonarQube Analysis ======="
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=${APP_NAME} \
+                        -Dsonar.sources=src \
+                        -Dsonar.host.url=${SONAR_HOST} \
+                        -Dsonar.login=${SONAR_TOKEN}
+                    '''
+                }
+            }
+        }
+        
+        stage('Dependency Check') {
+            steps {
+                script {
+                    echo "======= Running OWASP Dependency Check ======="
+                    sh '''
+                        dependency-check.sh \
+                        --project "${APP_NAME}" \
+                        --scan . \
+                        --format JSON \
+                        --out ./reports/
+                    '''
+                }
+            }
+        }
+        
+        stage('Upload Artifact to Nexus') {
+            steps {
+                script {
+                    echo "======= Uploading Artifact to Nexus ======="
+                    sh '''
+                        mvn deploy \
+                        -DskipTests \
+                        -Dmaven.wagon.http.ssl.insecure=true
+                    '''
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "======= Building Docker Image ======="
+                    sh '''
+                        docker build -t ${DOCKER_IMAGE}:${VERSION} .
+                        docker tag ${DOCKER_IMAGE}:${VERSION} ${DOCKER_IMAGE}:latest
+                    '''
+                }
+            }
+        }
+        
+        stage('Push to DockerHub') {
+            steps {
+                script {
+                    echo "======= Pushing to DockerHub ======="
+                    sh '''
+                        echo ${DOCKER_CREDENTIALS_PSW} | docker login -u ${DOCKER_CREDENTIALS_USR} --password-stdin
+                        docker push ${DOCKER_IMAGE}:${VERSION}
+                        docker push ${DOCKER_IMAGE}:latest
+                        docker logout
+                    '''
+                }
+            }
+        }
+        
+        stage('Deploy to EKS') {
+            steps {
+                script {
+                    echo "======= Deploying to EKS ======="
+                    sh '''
+                        # Configure kubectl
+                        aws configure set region ap-south-1
+                        aws eks update-kubeconfig --name my-cluster --region ap-south-1
+                        
+                        # Update image in deployment manifest
+                        sed -i "s|IMAGE_TAG|${DOCKER_IMAGE}:${VERSION}|g" kubernetes/deployment.yaml
+                        
+                        # Apply manifests
+                        kubectl apply -f kubernetes/
+                        
+                        # Wait for rollout
+                        kubectl rollout status deployment/${APP_NAME} -n default --timeout=5m
+                    '''
+                }
+            }
+        }
+        
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    echo "======= Verifying Deployment ======="
+                    sh '''
+                        # Check pod status
+                        kubectl get pods -l app=${APP_NAME}
+                        
+                        # Check service status
+                        kubectl get svc ${APP_NAME}
+                        
+                        # Get LoadBalancer endpoint
+                        echo "Application URL:"
+                        kubectl get svc ${APP_NAME} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "✅ Pipeline executed successfully!"
+            // Send success notification
+        }
+        failure {
+            echo "❌ Pipeline failed!"
+            // Send failure notification
+        }
+        always {
+            // Clean up Docker resources
+            sh 'docker logout || true'
+            
+            // Archive test results if available
+            junit '**/target/surefire-reports/*.xml' , allowEmptyResults: true
+            
+            // Archive SonarQube report
+            archiveArtifacts artifacts: 'reports/**' , allowEmptyArchive: true
+        }
+    }
+}

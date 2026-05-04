@@ -1,0 +1,117 @@
+# Gitignore file for Project-2
+
+# Build artifacts
+target/
+build/
+dist/
+*.jar
+*.war
+*.class
+*.o
+*.so
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.iml
+.DS_Store
+*.project
+*.classpath
+.settings/
+bin/
+
+# Environment and Configuration
+.env
+.env.local
+*.properties
+!application.properties.example
+
+# Credentials and Secrets
+credentials/
+secrets/
+*.key
+*.pem
+private_key
+ssh_keys/
+aws_credentials
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+*.bak
+*.backup
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.orig
+release.properties
+.flattened-pom.xml
+
+# Gradle
+.gradle
+gradle/
+gradlew
+gradlew.bat
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+kubeconfig
+kubeconfig.yml
+.kube/
+
+# AWS
+.aws/credentials
+.aws/config
+
+# Node (if using Node.js tools)
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+
+# Backups
+*.backup
+*.backup.tar.gz
+backup/
+backups/
+
+# Test Coverage
+coverage/
+.nyc_output/
+
+# Terraform (if using IaC)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Cache
+.cache/
+*.cache
+
+# Documentation generated files
+site/
+api-docs/
