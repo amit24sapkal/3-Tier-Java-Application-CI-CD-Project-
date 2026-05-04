@@ -88,6 +88,14 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <!-- SCM Configuration -->
+    <scm>
+        <connection>scm:git:https://github.com/amit24sapkal/3-Tier-Java-Application-CI-CD-Project-.git</connection>
+        <developerConnection>scm:git:https://github.com/amit24sapkal/3-Tier-Java-Application-CI-CD-Project-.git</developerConnection>
+        <url>https://github.com/amit24sapkal/3-Tier-Java-Application-CI-CD-Project-</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <build>
         <plugins>
             <plugin>

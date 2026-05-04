@@ -303,7 +303,7 @@ sudo -u jenkins docker ps
 #### Pipeline Configuration:
 1. Select: **Pipeline script from SCM**
 2. SCM: **Git**
-3. Repository URL: `https://github.com/your-repo/Project-2.git`
+3. Repository URL: `https://github.com/amit24sapkal/3-Tier-Java-Application-CI-CD-Project-.git`
 4. Branch: `*/main` or `*/master`
 5. Script Path: `jenkins/Jenkinsfile`
 6. Click **Save**

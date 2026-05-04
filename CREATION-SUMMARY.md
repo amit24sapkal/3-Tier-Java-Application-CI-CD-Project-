@@ -243,7 +243,7 @@ curl http://LOAD_BALANCER/api/health
    git init
    git add .
    git commit -m "Initial CI/CD project structure"
-   git remote add origin https://github.com/YOUR_USERNAME/Project-2.git
+   git remote add origin https://github.com/amit24sapkal/3-Tier-Java-Application-CI-CD-Project-.git
    git push -u origin main
    ```
 

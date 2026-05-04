@@ -92,7 +92,7 @@ Repository: __________________/ekart
 ## GitHub Repository
 
 ```
-Repository URL: https://github.com/__________________/Project-2
+Repository URL: https://github.com/amit24sapkal/3-Tier-Java-Application-CI-CD-Project-.git
 Branch: __________________
 GitHub Token: __________________
 ```
